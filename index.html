@@ -18,7 +18,7 @@ html,body{height:100%;background:#000;color:#fff;font:15px/1.3 -apple-system,Bli
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 #app{position:fixed;inset:0;--t:env(safe-area-inset-top,0px);--b:env(safe-area-inset-bottom,0px);--ac:#8f7cf5}
 #view{position:absolute;inset:0;overflow:hidden;background:#000}
-#app:not(.full) #view{inset:calc(var(--t) + 64px) 0 auto;aspect-ratio:var(--ar);max-height:calc(100% - var(--t) - 304px)}
+#app:not(.full) #view{left:0;right:0;bottom:auto;top:calc((var(--t) + 64px + 100% - var(--b) - 180px)/2);transform:translateY(-50%);aspect-ratio:var(--ar);max-height:calc(100% - var(--t) - var(--b) - 244px)}
 #app:not(.full) footer{background:#000;padding-top:14px}
 #v,#im{width:100%;height:100%;object-fit:cover;display:block;transform:scale(var(--z,1));transition:transform .3s,opacity .2s,filter .2s}
 .flip #v,.flip #im{opacity:.2;filter:blur(14px)}
@@ -95,6 +95,14 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:.2s}
 .sw:checked{background:#34c759}
 .sw:checked::after{transform:translateX(20px)}
+/* classic look */
+.classic .pill,.classic .ic,.classic #zoom,.classic #modes,.classic #flip,.classic #pause{background:rgba(40,40,40,.6);border:0;box-shadow:none;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.classic .pill::before,.classic .ic::before,.classic #zoom::before,.classic #modes::before,.classic #flip::before,.classic #pause::before{display:none}
+.classic #zoom{background:rgba(0,0,0,.35)}
+.classic #pause{background:rgba(60,60,60,.7)}
+.classic #pause.on{background:#fff}
+.classic .knob{background:rgba(0,0,0,.65);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.classic #thumb{border-radius:10px;border:1px solid rgba(255,255,255,.2);box-shadow:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -137,6 +145,9 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
       <div class="sh"><h2>Front camera</h2><button data-reset="front">Reset</button></div>
       <p class="hint">Plays after you tap the flip button. Leave it empty to keep showing the back camera footage.</p>
       <div class="strip" id="front"></div>
+      <div class="sh"><h2>Interface</h2></div>
+      <div class="seg" id="ui"><button data-v="glass">Glass</button><button data-v="classic">Classic</button></div>
+      <p class="hint">Glass is the frosted look. Classic is the plain dark buttons.</p>
       <div class="sh"><h2>Aspect ratio</h2></div>
       <div class="seg" id="ar"><button data-v="9:16">9:16</button><button data-v="4:5">4:5</button><button data-v="3:4">3:4</button><button data-v="1:1">1:1</button></div>
       <p class="hint">9:16 fills the screen. The others sit on a black background.</p>
@@ -155,7 +166,7 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],v=$('#v'),im=$('#im'),B=document.body;
 let db,clips=[],cam='back',pend={back:0,front:0},acc=0,t0=0,paused=false,tmr=0,first=true,shot=false;
-let S={ar:'9:16',res:'HD',fps:30,loop:true,restart:true,sel:{back:null,front:null},pos:0};
+let S={ui:'glass',ar:'9:16',res:'HD',fps:30,loop:true,restart:true,sel:{back:null,front:null},pos:0};
 try{Object.assign(S,JSON.parse(localStorage.getItem('lc')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('lc',JSON.stringify(S))}catch(e){}};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -193,8 +204,9 @@ function play(){
 
 function look(){
   const [w,hh]=S.ar.split(':'),a=$('#app');
-  a.classList.toggle('full',S.ar==='9:16');a.style.setProperty('--ar',w+'/'+hh);
+  a.classList.toggle('full',S.ar==='9:16');a.classList.toggle('classic',S.ui==='classic');a.style.setProperty('--ar',w+'/'+hh);
   $('#spec').innerHTML=`${S.res}<sup>RES</sup>${S.fps}<sup>FPS</sup>`;
+  $$('#ui button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.ui));
   $$('#ar button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.ar));
   $$('#rs button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.res+' '+S.fps));
 }
@@ -221,7 +233,7 @@ const drop=async ids=>{for(const id of ids)await del(id);clips=clips.filter(c=>!
 
 $('#sheet').addEventListener('click',async e=>{
   const g=e.target.closest('.seg button');
-  if(g){if(g.parentElement.id==='ar')S.ar=g.dataset.v;else{const q=g.dataset.v.split(' ');S.res=q[0];S.fps=+q[1]}save();look();return}
+  if(g){const id=g.parentElement.id;if(id==='ar')S.ar=g.dataset.v;else if(id==='ui')S.ui=g.dataset.v;else{const q=g.dataset.v.split(' ');S.res=q[0];S.fps=+q[1]}save();look();return}
   const x=e.target.closest('[data-x]'),t=e.target.closest('.tile[data-id]'),r=e.target.closest('[data-reset]');
   if(x)return drop([x.dataset.x]);
   if(t){const c=t.dataset.cam;S.sel[c]=S.sel[c]===t.dataset.id?null:t.dataset.id;save();render();play();return}
