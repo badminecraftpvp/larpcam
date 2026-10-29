@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>LarpCam</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LarpCam">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+[hidden]{display:none!important}
+html,body{height:100%;background:#000;color:#fff;font:15px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+#app{position:fixed;inset:0;--t:env(safe-area-inset-top,0px);--b:env(safe-area-inset-bottom,0px);--ac:#8f7cf5}
+#view{position:absolute;inset:0;overflow:hidden;background:#000}
+.photo #view{inset:calc(var(--t) + 64px) 0 auto;aspect-ratio:3/4}
+#v{width:100%;height:100%;object-fit:cover;transform:scale(var(--z,1));transition:transform .3s,opacity .2s,filter .2s}
+#v.flip{opacity:.2;filter:blur(14px)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#flash.go{animation:fl .28s}
+@keyframes fl{from{opacity:.9}to{opacity:0}}
+#empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;gap:10px;padding:40px;color:#8e8e93}
+#empty b{color:#fff;font-size:17px}
+.btn{background:var(--ac);color:#111;border-radius:12px;padding:12px 20px;font-weight:600;margin-top:8px}
+header{position:absolute;top:0;left:0;right:0;height:calc(var(--t) + 56px);padding:calc(var(--t) + 12px) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;z-index:2}
+.pill,.ic{background:rgba(40,40,40,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.pill{border-radius:12px;padding:7px 10px;font-weight:600;font-size:13px}
+.pill sup{font-size:8px;opacity:.6;vertical-align:baseline;margin:0 3px 0 1px}
+.tools{display:flex;gap:8px}
+.ic{width:38px;height:38px;border-radius:19px;display:grid;place-items:center}
+#fl.on{color:#ffd60a}
+#fl.on .sl{display:none}
+#rec{position:absolute;left:50%;top:calc(var(--t) + 12px);transform:translateX(-50%);background:#ff3b30;border-radius:8px;padding:4px 10px;font-weight:600;font-variant-numeric:tabular-nums}
+.rc #spec,.rc .tools{visibility:hidden}
+footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 14px);z-index:2;display:flex;flex-direction:column;align-items:center;gap:16px}
+#zoom{display:flex;gap:4px;background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:24px;padding:4px}
+#zoom button{width:36px;height:36px;border-radius:50%;font-size:13px;font-weight:600}
+#zoom .on{background:rgba(0,0,0,.55);color:#ffd60a}
+#mid{display:flex;align-items:center;justify-content:center;gap:36px;height:84px}
+#shutter{width:78px;height:78px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}
+#shutter i{width:62px;height:62px;border-radius:50%;background:#ff3b30;transition:.2s}
+.photo #shutter i{background:#fff}
+.rc #shutter i{width:30px;height:30px;border-radius:8px}
+#shutter:active i{transform:scale(.9)}
+#pause,#snap{width:46px;height:46px;border-radius:50%;opacity:0;pointer-events:none;transition:opacity .2s;display:grid;place-items:center}
+#pause{background:rgba(60,60,60,.7)}
+#pause.on{background:#fff;color:#000}
+#snap{background:#fff}
+.rc #pause,.rc #snap{opacity:1;pointer-events:auto}
+#bar{width:100%;display:flex;align-items:center;justify-content:space-between}
+#thumb{width:46px;height:46px;border-radius:10px;background:#1c1c1e center/cover;border:1px solid rgba(255,255,255,.2)}
+#modes{display:flex;background:rgba(40,40,40,.6);border-radius:22px;padding:3px}
+#modes button{padding:9px 16px;font-size:13px;font-weight:600;color:#bbb;border-radius:19px}
+#modes .on{background:rgba(0,0,0,.65);color:#ffd60a}
+#flip{width:46px;height:46px;border-radius:50%;background:rgba(40,40,40,.6);display:grid;place-items:center}
+#flip svg{transition:transform .4s}
+#flip.spin svg{transform:rotate(180deg)}
+#sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
+.panel{width:100%;height:calc(100% - var(--t) - 8px);background:#1c1c1e;border-radius:14px 14px 0 0;display:flex;flex-direction:column;animation:up .3s ease-out;-webkit-user-select:none}
+@keyframes up{from{transform:translateY(100%)}}
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px;font-weight:600}
+#done{justify-self:end;color:var(--ac);font-weight:600}
+.scroll{overflow:auto;padding:0 16px calc(var(--b) + 28px);-webkit-overflow-scrolling:touch}
+.note{background:#2c2c2e;border-radius:12px;padding:12px 14px;color:#c7c7cc;font-size:13px;margin-bottom:18px}
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.sh h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8e8e93;font-weight:600}
+.sh button{color:var(--ac);font-size:13px}
+.hint{color:#8e8e93;font-size:13px;margin:4px 0 10px}
+.strip{display:flex;gap:8px;overflow-x:auto;background:#2c2c2e;border-radius:12px;padding:12px;margin-bottom:18px}
+.tile,.add{flex:none;width:76px;aspect-ratio:9/16;border-radius:10px;position:relative;overflow:hidden}
+.tile{border:2px solid transparent;background:#111}
+.tile.on{border-color:var(--ac)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65);font-size:16px;line-height:22px}
+.saving{display:grid;place-items:center;font-size:12px;color:#aaa;background:#3a3a3c}
+.add{background:#3a3a3c;display:grid;place-items:center;cursor:pointer}
+.add b{width:36px;height:36px;border-radius:50%;background:var(--ac);color:#111;display:grid;place-items:center;font-size:24px;font-weight:400}
+.list{background:#2c2c2e;border-radius:12px;margin-top:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px}
+.row+.row{border-top:1px solid #3a3a3c}
+.row small{display:block;color:#8e8e93;font-size:12px;margin-top:2px}
+.sw{appearance:none;-webkit-appearance:none;flex:none;width:51px;height:31px;border-radius:16px;background:#3a3a3c;position:relative;transition:.2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:.2s}
+.sw:checked{background:#34c759}
+.sw:checked::after{transform:translateX(20px)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app">
+  <div id="view"><video id="v" muted playsinline loop></video><div id="flash"></div></div>
+  <div id="empty"><b>No footage yet</b><span>Add a video to play as your live view.</span><button class="btn" id="addbtn">Add footage</button></div>
+  <header>
+    <span class="pill" id="spec">HD<sup>RES</sup>30<sup>FPS</sup></span>
+    <span id="rec" hidden>00:00:00</span>
+    <div class="tools">
+      <button class="ic" id="fl" aria-label="Flash"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/><path class="sl" d="M3 3l18 18" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
+      <button class="ic" id="set" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+  <footer>
+    <div id="zoom"><button data-z="0.5">0.5</button><button data-z="1" class="on">1×</button><button data-z="2">2</button></div>
+    <div id="mid">
+      <button id="pause" aria-label="Pause"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg></button>
+      <button id="shutter" aria-label="Shutter"><i></i></button>
+      <button id="snap" aria-label="Take photo"></button>
+    </div>
+    <div id="bar">
+      <button id="thumb" aria-label="Last capture"></button>
+      <div id="modes"><button class="on" data-m="video">VIDEO</button><button data-m="photo">PHOTO</button></div>
+      <button id="flip" aria-label="Flip camera"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 0-14-5.3L4 9M4 4v5h5M4 12a8 8 0 0 0 14 5.3L20 15M20 20v-5h-5"/></svg></button>
+    </div>
+  </footer>
+</main>
+
+<div id="sheet" hidden>
+  <div class="panel" role="dialog" aria-label="Settings">
+    <div class="top"><span></span><span>Settings</span><button id="done">Done</button></div>
+    <div class="scroll">
+      <p class="note">Footage never leaves your device. It is stored on this phone only.</p>
+      <p class="note" id="inst" hidden>To install: on iPhone tap Share, then Add to Home Screen. On Android open the browser menu, then Install app.</p>
+      <div class="sh"><h2>Back camera</h2><button data-reset="back">Reset</button></div>
+      <p class="hint">Plays where the live view would be when the camera opens.</p>
+      <div class="strip" id="back"></div>
+      <div class="sh"><h2>Front camera</h2><button data-reset="front">Reset</button></div>
+      <p class="hint">Plays after you tap the flip button. Leave it empty to keep showing the back camera footage.</p>
+      <div class="strip" id="front"></div>
+      <div class="sh"><h2>Playback</h2></div>
+      <div class="list">
+        <label class="row"><span>Loop footage</span><input type="checkbox" class="sw" id="loop"></label>
+        <label class="row"><span>Restart on open<small>Plays from the start every time you open the app. Off, it carries on where it left off.</small></span><input type="checkbox" class="sw" id="restart"></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],v=$('#v'),B=document.body;
+let db,clips=[],cam='back',pend={back:0,front:0},acc=0,t0=0,paused=false,tmr=0,first=true,shot=false;
+let S={loop:true,restart:true,sel:{back:null,front:null},pos:0};
+try{Object.assign(S,JSON.parse(localStorage.getItem('lc')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('lc',JSON.stringify(S))}catch(e){}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const openDB=()=>new Promise((ok,no)=>{const r=indexedDB.open('lc',1);r.onupgradeneeded=()=>r.result.createObjectStore('clips',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const tx=(m,f)=>new Promise((ok,no)=>{const t=db.transaction('clips',m),q=f(t.objectStore('clips'));t.oncomplete=()=>ok(q.result);t.onerror=()=>no(t.error)});
+const all=()=>tx('readonly',s=>s.getAll()),put=c=>tx('readwrite',s=>s.put(c)),del=id=>tx('readwrite',s=>s.delete(id));
+
+const thumb=b=>new Promise(r=>{
+  const e=document.createElement('video'),u=URL.createObjectURL(b);
+  const end=d=>{URL.revokeObjectURL(u);r(d)};
+  setTimeout(()=>end(''),5000);
+  e.muted=true;e.playsInline=true;e.preload='auto';e.src=u;
+  e.onloadeddata=()=>{e.currentTime=Math.min(.1,(e.duration||0)/2)};
+  e.onseeked=()=>{const c=document.createElement('canvas');c.width=180;c.height=Math.round(180*e.videoHeight/e.videoWidth)||320;c.getContext('2d').drawImage(e,0,0,c.width,c.height);end(c.toDataURL('image/jpeg',.7))};
+  e.onerror=()=>end('');
+});
+
+const cur=()=>{const id=S.sel[cam]||(cam==='front'?S.sel.back:null);return clips.find(c=>c.id===id)};
+function play(){
+  const c=cur();$('#empty').hidden=!!c;
+  if(!c){v.pause();v.removeAttribute('src');v.dataset.id='';return}
+  if(!shot&&c.thumb)$('#thumb').style.backgroundImage=`url(${c.thumb})`;
+  if(v.dataset.id===c.id){v.play().catch(()=>{});return}
+  if(v.src)URL.revokeObjectURL(v.src);
+  v.src=URL.createObjectURL(c.blob);v.dataset.id=c.id;v.loop=S.loop;
+  if(first&&!S.restart)v.addEventListener('loadedmetadata',()=>{if(S.pos<v.duration)v.currentTime=S.pos},{once:true});
+  v.play().catch(()=>{});
+}
+
+function render(){
+  for(const c of ['back','front']){
+    $('#'+c).innerHTML=`<label class="add" aria-label="Add footage"><b>+</b><input type="file" accept="video/*" multiple hidden data-cam="${c}"></label>`
+      +(pend[c]?'<div class="tile saving">Saving</div>':'')
+      +clips.filter(x=>x.cam===c).map(x=>`<div class="tile${S.sel[c]===x.id?' on':''}" data-id="${x.id}" data-cam="${c}"><img src="${x.thumb}" alt=""><button class="x" data-x="${x.id}" aria-label="Remove footage">×</button></div>`).join('');
+  }
+  $('#loop').checked=S.loop;$('#restart').checked=S.restart;
+}
+
+async function add(c,files){
+  for(const f of files){
+    if(!f.type.startsWith('video/'))continue;
+    pend[c]++;render();
+    const o={id:uid(),cam:c,blob:f,thumb:await thumb(f),t:Date.now()};
+    try{await put(o);clips.push(o);S.sel[c]=o.id}catch(e){alert('Could not save this video. Your phone storage may be full.')}
+    pend[c]--;
+  }
+  save();render();play();
+}
+const drop=async ids=>{for(const id of ids)await del(id);clips=clips.filter(c=>!ids.includes(c.id));for(const k in S.sel)if(ids.includes(S.sel[k]))S.sel[k]=null;v.dataset.id='';save();render();play()};
+
+$('#sheet').addEventListener('click',async e=>{
+  const x=e.target.closest('[data-x]'),t=e.target.closest('.tile[data-id]'),r=e.target.closest('[data-reset]');
+  if(x)return drop([x.dataset.x]);
+  if(t){const c=t.dataset.cam;S.sel[c]=S.sel[c]===t.dataset.id?null:t.dataset.id;save();render();play();return}
+  if(r&&confirm('Remove all footage for this camera?'))return drop(clips.filter(c=>c.cam===r.dataset.reset).map(c=>c.id));
+  if(e.target.id==='done'||e.target.id==='sheet')$('#sheet').hidden=true;
+});
+$('#sheet').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.type==='file'){add(t.dataset.cam,[...t.files]);t.value=''}
+  else if(t.id==='loop'){S.loop=v.loop=t.checked;save()}
+  else if(t.id==='restart'){S.restart=t.checked;save()}
+});
+$('#set').onclick=$('#addbtn').onclick=()=>$('#sheet').hidden=false;
+$('#fl').onclick=e=>e.currentTarget.classList.toggle('on');
+
+const p2=n=>String(n).padStart(2,'0');
+const tick=()=>{const s=Math.floor((acc+(paused?0:Date.now()-t0))/1e3);$('#rec').textContent=`${p2(s/3600|0)}:${p2(s/60%60|0)}:${p2(s%60)}`};
+function snap(){
+  const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
+  if(!v.videoWidth)return;
+  const c=document.createElement('canvas');c.width=120;c.height=Math.round(120*v.videoHeight/v.videoWidth);
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  $('#thumb').style.backgroundImage=`url(${c.toDataURL('image/jpeg',.7)})`;shot=true;
+}
+$('#shutter').onclick=()=>{
+  if(B.classList.contains('photo'))return snap();
+  if(B.classList.contains('rc')){clearInterval(tmr);B.classList.remove('rc');$('#rec').hidden=true;$('#pause').classList.remove('on')}
+  else{acc=0;paused=false;t0=Date.now();B.classList.add('rc');$('#rec').hidden=false;tick();tmr=setInterval(tick,250)}
+};
+$('#snap').onclick=snap;
+$('#pause').onclick=e=>{if(paused){t0=Date.now();paused=false}else{acc+=Date.now()-t0;paused=true}e.currentTarget.classList.toggle('on',paused)};
+$$('#modes button').forEach(b=>b.onclick=()=>{if(B.classList.contains('rc'))return;$$('#modes button').forEach(x=>x.classList.toggle('on',x===b));B.classList.toggle('photo',b.dataset.m==='photo')});
+$$('#zoom button').forEach(b=>b.onclick=()=>{$$('#zoom button').forEach(x=>{x.classList.toggle('on',x===b);x.textContent=x.dataset.z+(x===b?'×':'')});v.style.setProperty('--z',Math.max(1,b.dataset.z))});
+$('#flip').onclick=()=>{v.classList.add('flip');$('#flip').classList.toggle('spin');setTimeout(()=>{cam=cam==='back'?'front':'back';play();v.classList.remove('flip')},180)};
+
+const keep=()=>{S.pos=v.currentTime||0;save()};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)keep();else{if(S.restart)v.currentTime=0;v.play().catch(()=>{})}});
+addEventListener('pagehide',keep);
+document.addEventListener('pointerdown',()=>{if(v.paused&&v.src)v.play().catch(()=>{})});
+
+(async()=>{
+  try{db=await openDB();clips=await all()}catch(e){}
+  render();play();first=false;
+  if(!(matchMedia('(display-mode:standalone)').matches||navigator.standalone))$('#inst').hidden=false;
+  navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
