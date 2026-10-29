@@ -18,9 +18,10 @@ html,body{height:100%;background:#000;color:#fff;font:15px/1.3 -apple-system,Bli
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 #app{position:fixed;inset:0;--t:env(safe-area-inset-top,0px);--b:env(safe-area-inset-bottom,0px);--ac:#8f7cf5}
 #view{position:absolute;inset:0;overflow:hidden;background:#000}
-.photo #view{inset:calc(var(--t) + 64px) 0 auto;aspect-ratio:3/4}
-#v{width:100%;height:100%;object-fit:cover;transform:scale(var(--z,1));transition:transform .3s,opacity .2s,filter .2s}
-#v.flip{opacity:.2;filter:blur(14px)}
+#app:not(.full) #view{inset:calc(var(--t) + 64px) 0 auto;aspect-ratio:var(--ar);max-height:calc(100% - var(--t) - 304px)}
+#app:not(.full) footer{background:#000;padding-top:14px}
+#v,#im{width:100%;height:100%;object-fit:cover;display:block;transform:scale(var(--z,1));transition:transform .3s,opacity .2s,filter .2s}
+.flip #v,.flip #im{opacity:.2;filter:blur(14px)}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 #flash.go{animation:fl .28s}
 @keyframes fl{from{opacity:.9}to{opacity:0}}
@@ -28,7 +29,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 #empty b{color:#fff;font-size:17px}
 .btn{background:var(--ac);color:#111;border-radius:12px;padding:12px 20px;font-weight:600;margin-top:8px}
 header{position:absolute;top:0;left:0;right:0;height:calc(var(--t) + 56px);padding:calc(var(--t) + 12px) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;z-index:2}
-.pill,.ic{background:rgba(40,40,40,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.pill,.ic,#zoom,#modes,#flip,#pause{position:relative;isolation:isolate;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -1px 0 rgba(255,255,255,.06),inset 0 0 14px rgba(255,255,255,.06),0 6px 20px rgba(0,0,0,.35)}
+.pill::before,.ic::before,#zoom::before,#modes::before,#flip::before,#pause::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,.14))}
 .pill{border-radius:12px;padding:7px 10px;font-weight:600;font-size:13px}
 .pill sup{font-size:8px;opacity:.6;vertical-align:baseline;margin:0 3px 0 1px}
 .tools{display:flex;gap:8px}
@@ -38,9 +40,10 @@ header{position:absolute;top:0;left:0;right:0;height:calc(var(--t) + 56px);paddi
 #rec{position:absolute;left:50%;top:calc(var(--t) + 12px);transform:translateX(-50%);background:#ff3b30;border-radius:8px;padding:4px 10px;font-weight:600;font-variant-numeric:tabular-nums}
 .rc #spec,.rc .tools{visibility:hidden}
 footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 14px);z-index:2;display:flex;flex-direction:column;align-items:center;gap:16px}
-#zoom{display:flex;gap:4px;background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:24px;padding:4px}
+#zoom{position:absolute;left:50%;bottom:calc(var(--b) + 178px);transform:translateX(-50%);z-index:1;display:flex;gap:4px;border-radius:24px;padding:4px}
+#app:not(.full) #zoom{bottom:12px}
 #zoom button{width:36px;height:36px;border-radius:50%;font-size:13px;font-weight:600}
-#zoom .on{background:rgba(0,0,0,.55);color:#ffd60a}
+#zoom .on{background:rgba(0,0,0,.5);color:#ffd60a}
 #mid{display:flex;align-items:center;justify-content:center;gap:36px;height:84px}
 #shutter{width:78px;height:78px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}
 #shutter i{width:62px;height:62px;border-radius:50%;background:#ff3b30;transition:.2s}
@@ -48,16 +51,17 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 .rc #shutter i{width:30px;height:30px;border-radius:8px}
 #shutter:active i{transform:scale(.9)}
 #pause,#snap{width:46px;height:46px;border-radius:50%;opacity:0;pointer-events:none;transition:opacity .2s;display:grid;place-items:center}
-#pause{background:rgba(60,60,60,.7)}
 #pause.on{background:#fff;color:#000}
 #snap{background:#fff}
 .rc #pause,.rc #snap{opacity:1;pointer-events:auto}
 #bar{width:100%;display:flex;align-items:center;justify-content:space-between}
-#thumb{width:46px;height:46px;border-radius:10px;background:#1c1c1e center/cover;border:1px solid rgba(255,255,255,.2)}
-#modes{display:flex;background:rgba(40,40,40,.6);border-radius:22px;padding:3px}
-#modes button{padding:9px 16px;font-size:13px;font-weight:600;color:#bbb;border-radius:19px}
-#modes .on{background:rgba(0,0,0,.65);color:#ffd60a}
-#flip{width:46px;height:46px;border-radius:50%;background:rgba(40,40,40,.6);display:grid;place-items:center}
+#thumb{width:46px;height:46px;border-radius:50%;background:#1c1c1e center/cover;border:1px solid rgba(255,255,255,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 20px rgba(0,0,0,.35)}
+#modes{display:flex;border-radius:24px;padding:3px}
+#modes button{position:relative;z-index:1;width:88px;padding:10px 0;font-size:13px;font-weight:600;color:#d1d1d6;border-radius:21px;transition:color .25s}
+#modes .on{color:#ffd60a}
+.knob{position:absolute;top:3px;bottom:3px;left:3px;width:88px;border-radius:21px;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(8px) saturate(160%);backdrop-filter:blur(8px) saturate(160%);box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -1px 1px rgba(255,255,255,.14),0 3px 12px rgba(0,0,0,.4);transition:transform .38s cubic-bezier(.3,1.5,.5,1)}
+.photo .knob{transform:translateX(88px)}
+#flip{width:46px;height:46px;border-radius:50%;display:grid;place-items:center}
 #flip svg{transition:transform .4s}
 #flip.spin svg{transform:rotate(180deg)}
 #sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
@@ -80,6 +84,9 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 .saving{display:grid;place-items:center;font-size:12px;color:#aaa;background:#3a3a3c}
 .add{background:#3a3a3c;display:grid;place-items:center;cursor:pointer}
 .add b{width:36px;height:36px;border-radius:50%;background:var(--ac);color:#111;display:grid;place-items:center;font-size:24px;font-weight:400}
+.seg{display:flex;background:#2c2c2e;border-radius:10px;padding:2px;margin:8px 0 6px}
+.seg button{flex:1;padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;color:#aaa}
+.seg .on{background:#636366;color:#fff}
 .list{background:#2c2c2e;border-radius:12px;margin-top:8px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px}
 .row+.row{border-top:1px solid #3a3a3c}
@@ -93,10 +100,11 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 </head>
 <body>
 <main id="app">
-  <div id="view"><video id="v" muted playsinline loop></video><div id="flash"></div></div>
-  <div id="empty"><b>No footage yet</b><span>Add a video to play as your live view.</span><button class="btn" id="addbtn">Add footage</button></div>
+  <div id="view"><video id="v" muted playsinline loop></video><img id="im" alt="" hidden>
+  <div id="zoom"><button data-z="0.5">0.5</button><button data-z="1" class="on">1×</button><button data-z="2">2</button></div><div id="flash"></div></div>
+  <div id="empty"><b>No footage yet</b><span>Add a video or photo to show as your live view.</span><button class="btn" id="addbtn">Add footage</button></div>
   <header>
-    <span class="pill" id="spec">HD<sup>RES</sup>30<sup>FPS</sup></span>
+    <button class="pill" id="spec" aria-label="Resolution"></button>
     <span id="rec" hidden>00:00:00</span>
     <div class="tools">
       <button class="ic" id="fl" aria-label="Flash"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/><path class="sl" d="M3 3l18 18" stroke="currentColor" stroke-width="2" fill="none"/></svg></button>
@@ -104,7 +112,6 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
     </div>
   </header>
   <footer>
-    <div id="zoom"><button data-z="0.5">0.5</button><button data-z="1" class="on">1×</button><button data-z="2">2</button></div>
     <div id="mid">
       <button id="pause" aria-label="Pause"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg></button>
       <button id="shutter" aria-label="Shutter"><i></i></button>
@@ -112,7 +119,7 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
     </div>
     <div id="bar">
       <button id="thumb" aria-label="Last capture"></button>
-      <div id="modes"><button class="on" data-m="video">VIDEO</button><button data-m="photo">PHOTO</button></div>
+      <div id="modes"><i class="knob"></i><button class="on" data-m="video">VIDEO</button><button data-m="photo">PHOTO</button></div>
       <button id="flip" aria-label="Flip camera"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 0-14-5.3L4 9M4 4v5h5M4 12a8 8 0 0 0 14 5.3L20 15M20 20v-5h-5"/></svg></button>
     </div>
   </footer>
@@ -130,6 +137,12 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
       <div class="sh"><h2>Front camera</h2><button data-reset="front">Reset</button></div>
       <p class="hint">Plays after you tap the flip button. Leave it empty to keep showing the back camera footage.</p>
       <div class="strip" id="front"></div>
+      <div class="sh"><h2>Aspect ratio</h2></div>
+      <div class="seg" id="ar"><button data-v="9:16">9:16</button><button data-v="4:5">4:5</button><button data-v="3:4">3:4</button><button data-v="1:1">1:1</button></div>
+      <p class="hint">9:16 fills the screen. The others sit on a black background.</p>
+      <div class="sh"><h2>Resolution</h2></div>
+      <div class="seg" id="rs"><button data-v="HD 30">HD 30</button><button data-v="4K 30">4K 30</button><button data-v="4K 60">4K 60</button></div>
+      <p class="hint">Changes the label in the corner. You can also tap it on the camera screen.</p>
       <div class="sh"><h2>Playback</h2></div>
       <div class="list">
         <label class="row"><span>Loop footage</span><input type="checkbox" class="sw" id="loop"></label>
@@ -140,9 +153,9 @@ footer{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(var(--b) + 
 </div>
 
 <script>
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],v=$('#v'),B=document.body;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],v=$('#v'),im=$('#im'),B=document.body;
 let db,clips=[],cam='back',pend={back:0,front:0},acc=0,t0=0,paused=false,tmr=0,first=true,shot=false;
-let S={loop:true,restart:true,sel:{back:null,front:null},pos:0};
+let S={ar:'9:16',res:'HD',fps:30,loop:true,restart:true,sel:{back:null,front:null},pos:0};
 try{Object.assign(S,JSON.parse(localStorage.getItem('lc')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('lc',JSON.stringify(S))}catch(e){}};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -151,6 +164,7 @@ const tx=(m,f)=>new Promise((ok,no)=>{const t=db.transaction('clips',m),q=f(t.ob
 const all=()=>tx('readonly',s=>s.getAll()),put=c=>tx('readwrite',s=>s.put(c)),del=id=>tx('readwrite',s=>s.delete(id));
 
 const thumb=b=>new Promise(r=>{
+  if(b.type.startsWith('image/')){const i=new Image(),u=URL.createObjectURL(b);i.onload=()=>{const c=document.createElement('canvas');c.width=180;c.height=Math.round(180*i.naturalHeight/i.naturalWidth)||320;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>{URL.revokeObjectURL(u);r('')};i.src=u;return}
   const e=document.createElement('video'),u=URL.createObjectURL(b);
   const end=d=>{URL.revokeObjectURL(u);r(d)};
   setTimeout(()=>end(''),5000);
@@ -163,18 +177,30 @@ const thumb=b=>new Promise(r=>{
 const cur=()=>{const id=S.sel[cam]||(cam==='front'?S.sel.back:null);return clips.find(c=>c.id===id)};
 function play(){
   const c=cur();$('#empty').hidden=!!c;
-  if(!c){v.pause();v.removeAttribute('src');v.dataset.id='';return}
+  if(!c){v.pause();v.removeAttribute('src');v.dataset.id='';im.hidden=true;return}
   if(!shot&&c.thumb)$('#thumb').style.backgroundImage=`url(${c.thumb})`;
-  if(v.dataset.id===c.id){v.play().catch(()=>{});return}
+  const pic=c.blob.type.startsWith('image/');
+  if(v.dataset.id===c.id){if(!pic)v.play().catch(()=>{});return}
   if(v.src)URL.revokeObjectURL(v.src);
-  v.src=URL.createObjectURL(c.blob);v.dataset.id=c.id;v.loop=S.loop;
+  if(im.src)URL.revokeObjectURL(im.src);
+  v.dataset.id=c.id;
+  if(pic){v.pause();v.removeAttribute('src');v.hidden=true;im.src=URL.createObjectURL(c.blob);im.hidden=false;return}
+  im.hidden=true;v.hidden=false;
+  v.src=URL.createObjectURL(c.blob);v.loop=S.loop;
   if(first&&!S.restart)v.addEventListener('loadedmetadata',()=>{if(S.pos<v.duration)v.currentTime=S.pos},{once:true});
   v.play().catch(()=>{});
 }
 
+function look(){
+  const [w,hh]=S.ar.split(':'),a=$('#app');
+  a.classList.toggle('full',S.ar==='9:16');a.style.setProperty('--ar',w+'/'+hh);
+  $('#spec').innerHTML=`${S.res}<sup>RES</sup>${S.fps}<sup>FPS</sup>`;
+  $$('#ar button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.ar));
+  $$('#rs button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.res+' '+S.fps));
+}
 function render(){
   for(const c of ['back','front']){
-    $('#'+c).innerHTML=`<label class="add" aria-label="Add footage"><b>+</b><input type="file" accept="video/*" multiple hidden data-cam="${c}"></label>`
+    $('#'+c).innerHTML=`<label class="add" aria-label="Add footage"><b>+</b><input type="file" accept="video/*,image/*" multiple hidden data-cam="${c}"></label>`
       +(pend[c]?'<div class="tile saving">Saving</div>':'')
       +clips.filter(x=>x.cam===c).map(x=>`<div class="tile${S.sel[c]===x.id?' on':''}" data-id="${x.id}" data-cam="${c}"><img src="${x.thumb}" alt=""><button class="x" data-x="${x.id}" aria-label="Remove footage">×</button></div>`).join('');
   }
@@ -183,7 +209,7 @@ function render(){
 
 async function add(c,files){
   for(const f of files){
-    if(!f.type.startsWith('video/'))continue;
+    if(!/^(video|image)\//.test(f.type))continue;
     pend[c]++;render();
     const o={id:uid(),cam:c,blob:f,thumb:await thumb(f),t:Date.now()};
     try{await put(o);clips.push(o);S.sel[c]=o.id}catch(e){alert('Could not save this video. Your phone storage may be full.')}
@@ -194,6 +220,8 @@ async function add(c,files){
 const drop=async ids=>{for(const id of ids)await del(id);clips=clips.filter(c=>!ids.includes(c.id));for(const k in S.sel)if(ids.includes(S.sel[k]))S.sel[k]=null;v.dataset.id='';save();render();play()};
 
 $('#sheet').addEventListener('click',async e=>{
+  const g=e.target.closest('.seg button');
+  if(g){if(g.parentElement.id==='ar')S.ar=g.dataset.v;else{const q=g.dataset.v.split(' ');S.res=q[0];S.fps=+q[1]}save();look();return}
   const x=e.target.closest('[data-x]'),t=e.target.closest('.tile[data-id]'),r=e.target.closest('[data-reset]');
   if(x)return drop([x.dataset.x]);
   if(t){const c=t.dataset.cam;S.sel[c]=S.sel[c]===t.dataset.id?null:t.dataset.id;save();render();play();return}
@@ -207,15 +235,17 @@ $('#sheet').addEventListener('change',e=>{
   else if(t.id==='restart'){S.restart=t.checked;save()}
 });
 $('#set').onclick=$('#addbtn').onclick=()=>$('#sheet').hidden=false;
+$('#spec').onclick=()=>{const o=['HD 30','4K 30','4K 60'],n=o[(o.indexOf(S.res+' '+S.fps)+1)%3].split(' ');S.res=n[0];S.fps=+n[1];save();look()};
 $('#fl').onclick=e=>e.currentTarget.classList.toggle('on');
 
 const p2=n=>String(n).padStart(2,'0');
 const tick=()=>{const s=Math.floor((acc+(paused?0:Date.now()-t0))/1e3);$('#rec').textContent=`${p2(s/3600|0)}:${p2(s/60%60|0)}:${p2(s%60)}`};
 function snap(){
   const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
-  if(!v.videoWidth)return;
-  const c=document.createElement('canvas');c.width=120;c.height=Math.round(120*v.videoHeight/v.videoWidth);
-  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  const s=im.hidden?v:im,w=s.videoWidth||s.naturalWidth,hh=s.videoHeight||s.naturalHeight;
+  if(!w)return;
+  const c=document.createElement('canvas');c.width=120;c.height=Math.round(120*hh/w);
+  c.getContext('2d').drawImage(s,0,0,c.width,c.height);
   $('#thumb').style.backgroundImage=`url(${c.toDataURL('image/jpeg',.7)})`;shot=true;
 }
 $('#shutter').onclick=()=>{
@@ -226,8 +256,8 @@ $('#shutter').onclick=()=>{
 $('#snap').onclick=snap;
 $('#pause').onclick=e=>{if(paused){t0=Date.now();paused=false}else{acc+=Date.now()-t0;paused=true}e.currentTarget.classList.toggle('on',paused)};
 $$('#modes button').forEach(b=>b.onclick=()=>{if(B.classList.contains('rc'))return;$$('#modes button').forEach(x=>x.classList.toggle('on',x===b));B.classList.toggle('photo',b.dataset.m==='photo')});
-$$('#zoom button').forEach(b=>b.onclick=()=>{$$('#zoom button').forEach(x=>{x.classList.toggle('on',x===b);x.textContent=x.dataset.z+(x===b?'×':'')});v.style.setProperty('--z',Math.max(1,b.dataset.z))});
-$('#flip').onclick=()=>{v.classList.add('flip');$('#flip').classList.toggle('spin');setTimeout(()=>{cam=cam==='back'?'front':'back';play();v.classList.remove('flip')},180)};
+$$('#zoom button').forEach(b=>b.onclick=()=>{$$('#zoom button').forEach(x=>{x.classList.toggle('on',x===b);x.textContent=x.dataset.z+(x===b?'×':'')});$('#view').style.setProperty('--z',Math.max(1,b.dataset.z))});
+$('#flip').onclick=()=>{$('#view').classList.add('flip');$('#flip').classList.toggle('spin');setTimeout(()=>{cam=cam==='back'?'front':'back';play();$('#view').classList.remove('flip')},180)};
 
 const keep=()=>{S.pos=v.currentTime||0;save()};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)keep();else{if(S.restart)v.currentTime=0;v.play().catch(()=>{})}});
@@ -236,7 +266,7 @@ document.addEventListener('pointerdown',()=>{if(v.paused&&v.src)v.play().catch((
 
 (async()=>{
   try{db=await openDB();clips=await all()}catch(e){}
-  render();play();first=false;
+  look();render();play();first=false;
   if(!(matchMedia('(display-mode:standalone)').matches||navigator.standalone))$('#inst').hidden=false;
   navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
