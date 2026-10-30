@@ -15,5 +15,5 @@ Footage you add is stored on the phone only (IndexedDB), never uploaded.
 ## Gallery, info and map
 - Tap the thumbnail (bottom left) to open the gallery. Open a photo or video and swipe up (or tap the info button) to see its details and map.
 - Tap the map (or the place name) in a photo's info to open that spot in Apple Maps (maps.apple.com). Adjust opens the location editor.
-- The preview map and the editor use MapLibre GL JS with the open-source Apple Maps look from github.com/dddevid/MapLibre-GL-JS-AppleMaps-Style (dark for Standard, white for Light), with map data from OpenFreeMap and OpenStreetMap. Satellite uses Esri imagery. Place search and place names use OpenStreetMap Nominatim. These need an internet connection. Everything else works offline.
+- The preview map and the editor use MapLibre GL JS with the open-source Apple Maps look from github.com/dddevid/MapLibre-GL-JS-AppleMaps-Style (dark for Standard, white for Light), with map data from OpenFreeMap and OpenStreetMap. Satellite uses Esri imagery. Place search and place names use OpenStreetMap Nominatim.
 - Settings > Metadata turns location tagging on or off. Photos and videos never leave your phone.
