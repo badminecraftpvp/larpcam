@@ -11,3 +11,8 @@ A camera-style web app that plays your own videos as the "live view". Installabl
 - Android: open it in Chrome > menu > Install app.
 
 Footage you add is stored on the phone only (IndexedDB), never uploaded.
+
+## Gallery, info and map
+- Tap the thumbnail (bottom left) to open the gallery. Open a photo or video and swipe up (or tap the info button) to see its details and map.
+- Maps use OpenStreetMap and Esri satellite tiles through Leaflet. Place search and place names use OpenStreetMap Nominatim. These need an internet connection. Everything else works offline.
+- Settings > Metadata turns location tagging on or off. Photos and videos never leave your phone.
