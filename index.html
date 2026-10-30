@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
@@ -259,9 +259,9 @@ input,select{-webkit-user-select:text;user-select:text}
 .cp{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-26px 0 0 -13px;border-radius:50% 50% 50% 0;background:#ff453a;transform:rotate(-45deg);z-index:500;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .cp::after{content:"";position:absolute;inset:8px;border-radius:50%;background:#fff}
 #mrm{display:block;width:100%;padding:12px;color:#ff453a;font-weight:500}
-.leaflet-container{background:#1c1c1e}
-.leaflet-control-attribution{background:rgba(0,0,0,.5)!important;color:#aaa!important;font-size:9px}
-.leaflet-control-attribution a{color:#8ab4ff!important}
+.maplibregl-map{font:inherit;background:#1c1c1e}
+.maplibregl-ctrl-attrib{background:rgba(0,0,0,.5)!important;color:#aaa!important;font-size:9px}
+.maplibregl-ctrl-attrib a{color:#8ab4ff!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -745,32 +745,45 @@ $('#iadj').onclick=adj;$('#adone').onclick=()=>$('#ad').hidden=true;
 $('#ad').addEventListener('click',e=>{if(e.target.id==='ad')$('#ad').hidden=true});
 
 /* map */
-const TL={std:['https://tile.openstreetmap.org/{z}/{x}/{y}.png','invert(1) hue-rotate(180deg) saturate(1.6) brightness(.95) contrast(.95)','© OpenStreetMap'],lt:['https://tile.openstreetmap.org/{z}/{x}/{y}.png','','© OpenStreetMap'],sat:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}','','Esri']};
-function setT(m){const t=TL[S.mt]||TL.std;if(m._tl)m.removeLayer(m._tl);m._tl=L.tileLayer(t[0],{maxZoom:19,attribution:t[2]}).addTo(m);m.getPane('tilePane').style.filter=t[1]}
+const SB='https://raw.githubusercontent.com/dddevid/MapLibre-GL-JS-AppleMaps-Style/main/';
+const MS={
+  std:[SB+'apple-maps-dark.json','© OpenFreeMap © OpenStreetMap'],
+  lt:[SB+'apple-maps-white.json','© OpenFreeMap © OpenStreetMap'],
+  sat:[{version:8,sources:{es:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:'Esri'}},layers:[{id:'es',type:'raster',source:'es'}]},'Esri']
+};
+const mst=()=>MS[S.mt]||MS.std;
+const mnew=(id,o)=>new maplibregl.Map(Object.assign({container:id,style:mst()[0],attributionControl:false,fadeDuration:0,dragRotate:false,pitchWithRotate:false},o));
+function stM(){if(!mm)return;mm._st=S.mt;mm.setStyle(mst()[0])}
 function drawMap(){
   if(cm){cm.remove();cm=null}
   const c=caps[gi];if(!c||c.m.lat==null)return;
-  $('#mat').textContent=(TL[S.mt]||TL.std)[2];
-  if(!window.L)return;
-  cm=L.map('mc',{zoomControl:false,attributionControl:false,dragging:false,touchZoom:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false}).setView([c.m.lat,c.m.lng],15);
-  setT(cm);
-  L.marker([c.m.lat,c.m.lng],{icon:L.divIcon({className:'',html:`<div class="pin"><img src="${c.thumb}" alt=""></div>`,iconSize:[42,50],iconAnchor:[21,50]}),interactive:false}).addTo(cm);
+  $('#mat').textContent=mst()[1];
+  if(!window.maplibregl)return;
+  try{
+    cm=mnew('mc',{center:[c.m.lng,c.m.lat],zoom:14,interactive:false});
+    const el=document.createElement('div');el.innerHTML=`<div class="pin"><img src="${c.thumb}" alt=""></div>`;
+    new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([c.m.lng,c.m.lat]).addTo(cm);
+    setTimeout(()=>cm&&cm.resize(),350);
+  }catch(e){cm=null}
 }
 function openMs(){
   const m=caps[gi].m;mpd='';$('#msq').value='';$('#msr').innerHTML='';$('#ms').hidden=false;
   $$('#mt button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.mt));
-  if(!window.L){$('#msr').innerHTML='<p class="n">The map needs an internet connection.</p>';return}
-  const has=m.lat!=null;
-  if(!mm){mm=L.map('mm',{zoomControl:false});mm.attributionControl.setPrefix(false)}
-  mm.setView(has?[m.lat,m.lng]:(S.ll||[37.33,-122.01]),has?15:11);setT(mm);
-  setTimeout(()=>mm.invalidateSize(),60);
+  if(!window.maplibregl){$('#msr').innerHTML='<p class="n">The map needs an internet connection.</p>';return}
+  const has=m.lat!=null,ce=has?[m.lng,m.lat]:(S.ll?[S.ll[1],S.ll[0]]:[-122.01,37.33]),z=has?14:10;
+  try{
+    if(!mm){mm=mnew('mm',{center:ce,zoom:z,attributionControl:{compact:true}});mm.touchZoomRotate.disableRotation();mm._st=S.mt}
+    else{mm.jumpTo({center:ce,zoom:z});if(mm._st!==S.mt)stM()}
+  }catch(e){mm=null;$('#msr').innerHTML='<p class="n">The map could not load.</p>';return}
+  setTimeout(()=>mm&&mm.resize(),60);
 }
-$('#mcw').onclick=openMs;$('#madj').onclick=openMs;$('#addloc').onclick=openMs;
-$('#mt').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.mt=b.dataset.v;save();$$('#mt button').forEach(x=>x.classList.toggle('on',x===b));if(mm)setT(mm)};
+function openAM(){const m=caps[gi].m;if(m.lat==null)return;const a=document.createElement('a');a.href='https://maps.apple.com/?ll='+m.lat+','+m.lng+'&q='+encodeURIComponent(m.place||'Dropped Pin')+'&z=15&t='+(S.mt==='sat'?'k':'m');a.target='_blank';a.rel='noopener';a.click()}
+$('#mcw').onclick=openAM;$('#madj').onclick=openMs;$('#addloc').onclick=openMs;
+$('#mt').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.mt=b.dataset.v;save();$$('#mt button').forEach(x=>x.classList.toggle('on',x===b));stM()};
 $('#mcancel').onclick=()=>{$('#ms').hidden=true;drawMap()};
 $('#mdone').onclick=async()=>{
   const c=caps[gi],m=c.m;$('#ms').hidden=true;
-  if(mm&&window.L){const p=mm.getCenter();m.lat=+p.lat.toFixed(6);m.lng=+p.lng.toFixed(6);S.ll=[m.lat,m.lng];save();m.place=(await place(m.lat,m.lng))||mpd||'';try{await putC(c)}catch(e){}}
+  if(mm&&window.maplibregl){const p=mm.getCenter();m.lat=+p.lat.toFixed(6);m.lng=+p.lng.toFixed(6);S.ll=[m.lat,m.lng];save();m.place=(await place(m.lat,m.lng))||mpd||'';try{await putC(c)}catch(e){}}
   if(caps[gi]===c){title(c);fillInfo();drawMap()}
 };
 $('#mrm').onclick=async()=>{const c=caps[gi],m=c.m;m.lat=m.lng=null;m.place='';try{await putC(c)}catch(e){}$('#ms').hidden=true;title(c);fillInfo();drawMap()};
@@ -780,7 +793,7 @@ $('#msq').addEventListener('keydown',async e=>{
     $('#msr').innerHTML=sr.length?sr.map((x,i)=>`<button data-i="${i}"><b>${esc(x.name||x.display_name.split(',')[0])}</b><small>${esc(x.display_name)}</small></button>`).join(''):'<p class="n">No results</p>'}
   catch(err){$('#msr').innerHTML='<p class="n">Search needs an internet connection.</p>'}
 });
-$('#msr').onclick=e=>{const b=e.target.closest('button');if(!b||!mm)return;const x=sr[+b.dataset.i];mpd=x.name||x.display_name.split(',')[0];mm.setView([+x.lat,+x.lon],15);$('#msr').innerHTML=''};
+$('#msr').onclick=e=>{const b=e.target.closest('button');if(!b||!mm)return;const x=sr[+b.dataset.i];mpd=x.name||x.display_name.split(',')[0];mm.jumpTo({center:[+x.lon,+x.lat],zoom:14});$('#msr').innerHTML=''};
 
 const keep=()=>{S.pos=v.currentTime||0;save()};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)keep();else{if(S.restart)v.currentTime=0;v.play().catch(()=>{})}});
