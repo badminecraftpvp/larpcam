@@ -752,19 +752,29 @@ const MS={
   sat:[{version:8,sources:{es:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:'Esri'}},layers:[{id:'es',type:'raster',source:'es'}]},'Esri']
 };
 const mst=()=>MS[S.mt]||MS.std;
+const uq=a=>a.filter((v,i)=>a.indexOf(v)===i);
+const fxF=f=>{const t=String(f).toLowerCase();return t.indexOf('bold')>-1?'Noto Sans Bold':t.indexOf('italic')>-1?'Noto Sans Italic':'Noto Sans Regular'};
+function fxS(prev,next){
+  delete next.sprite;
+  (next.layers||[]).forEach(l=>{const lo=l.layout,tf=lo&&lo['text-font'];if(!Array.isArray(tf))return;
+    if(tf[0]==='literal'&&Array.isArray(tf[1]))lo['text-font']=['literal',uq(tf[1].map(fxF))];
+    else if(tf.every(x=>typeof x==='string'))lo['text-font']=uq(tf.map(fxF))});
+  return next}
+function setSt(m){const st=mst()[0];if(typeof st==='string')m.setStyle(st,{transformStyle:fxS});else m.setStyle(st)}
 const FB={version:8,sources:{o:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:19,attribution:'© OpenStreetMap'}},layers:[{id:'o',type:'raster',source:'o'}]};
 const mnew=(id,o)=>{
-  const m=new maplibregl.Map(Object.assign({container:id,style:mst()[0],attributionControl:false,fadeDuration:0,dragRotate:false,pitchWithRotate:false},o));
+  const m=new maplibregl.Map(Object.assign({container:id,attributionControl:false,fadeDuration:0,dragRotate:false,pitchWithRotate:false},o));
+  setSt(m);
   const el=document.getElementById(id);
   if(window.ResizeObserver){const ro=new ResizeObserver(()=>m.resize());ro.observe(el);m.on('remove',()=>ro.disconnect())}
   m.on('error',e=>{
     const er=e&&e.error;if(!er)return;
     if(er.url&&er.url===mst()[0]&&!m._fb){m._fb=1;m.setStyle(FB);return}
-    if(id==='mm'){const r=$('#msr');if(!r.querySelector('.mp'))r.insertAdjacentHTML('beforeend','<p class="n mp">Some map tiles did not load ('+String(er.status||er.message||'error').slice(0,40)+').</p>')}
+    if(id==='mm'&&(e.tile||e.sourceId)){const r=$('#msr');if(!r.querySelector('.mp'))r.insertAdjacentHTML('beforeend','<p class="n mp">Some map tiles did not load ('+String(er.status||er.message||'error').slice(0,40)+').</p>')}
   });
   return m;
 };
-function stM(){if(!mm)return;mm._st=S.mt;mm.setStyle(mst()[0])}
+function stM(){if(!mm)return;mm._st=S.mt;setSt(mm)}
 function drawMap(){
   if(cm){cm.remove();cm=null}
   const c=caps[gi];if(!c||c.m.lat==null)return;
